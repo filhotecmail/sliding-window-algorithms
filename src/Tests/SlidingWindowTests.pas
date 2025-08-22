@@ -32,6 +32,8 @@ type
     procedure TestSmallestSubarrayWithSumGreaterThan;
     procedure TestLongestSubarrayWithSumEqualsK;
     procedure TestMaxLengthSubarrayWithSumK;
+    procedure TestKthSmallestInSlidingWindow;
+    procedure TestKthSmallestAtPosition;
     
     // Edge cases
     procedure TestEmptyArray;
@@ -645,6 +647,78 @@ begin
   CSV := FBenchmark.Analyzer.GenerateCSVReport;
   CheckTrue(Length(CSV) > 0, 'CSV report should not be empty');
   CheckTrue(Pos('Algorithm,InputSize', CSV) > 0, 'CSV should contain proper headers');
+end;
+
+procedure TIntegerSlidingWindowTest.TestKthSmallestAtPosition;
+var
+  Result: Integer;
+begin
+  // Test data: [1, 3, 2, 5, 4, 6, 8, 7, 9, 10]
+  // Window at position 0, size 3: [1, 3, 2] -> sorted: [1, 2, 3]
+  Result := FSlidingWindow.KthSmallestAtPosition(0, 3, 1); // 1st smallest
+  CheckEquals(1, Result, '1st smallest in first window should be 1');
+  
+  Result := FSlidingWindow.KthSmallestAtPosition(0, 3, 2); // 2nd smallest
+  CheckEquals(2, Result, '2nd smallest in first window should be 2');
+  
+  Result := FSlidingWindow.KthSmallestAtPosition(0, 3, 3); // 3rd smallest
+  CheckEquals(3, Result, '3rd smallest in first window should be 3');
+  
+  // Window at position 2, size 3: [2, 5, 4] -> sorted: [2, 4, 5]
+  Result := FSlidingWindow.KthSmallestAtPosition(2, 3, 2); // 2nd smallest
+  CheckEquals(4, Result, '2nd smallest in window [2,5,4] should be 4');
+  
+  // Test edge cases
+  Result := FSlidingWindow.KthSmallestAtPosition(-1, 3, 1); // Invalid position
+  CheckEquals(0, Result, 'Invalid position should return 0');
+  
+  Result := FSlidingWindow.KthSmallestAtPosition(0, 3, 0); // Invalid k
+  CheckEquals(0, Result, 'Invalid k should return 0');
+  
+  Result := FSlidingWindow.KthSmallestAtPosition(0, 3, 4); // k > window size
+  CheckEquals(0, Result, 'k > window size should return 0');
+end;
+
+procedure TIntegerSlidingWindowTest.TestKthSmallestInSlidingWindow;
+var
+  Result: TArray<Integer>;
+begin
+  // Test data: [1, 3, 2, 5, 4, 6, 8, 7, 9, 10]
+  // Window size 3, k=2 (2nd smallest in each window)
+  Result := FSlidingWindow.KthSmallestInSlidingWindow(3, 2);
+  
+  CheckEquals(8, Length(Result), 'Should have 8 windows for size 3');
+  
+  // Window 0: [1, 3, 2] -> sorted: [1, 2, 3] -> 2nd smallest = 2
+  CheckEquals(2, Result[0], '2nd smallest in window [1,3,2] should be 2');
+  
+  // Window 1: [3, 2, 5] -> sorted: [2, 3, 5] -> 2nd smallest = 3
+  CheckEquals(3, Result[1], '2nd smallest in window [3,2,5] should be 3');
+  
+  // Window 2: [2, 5, 4] -> sorted: [2, 4, 5] -> 2nd smallest = 4
+  CheckEquals(4, Result[2], '2nd smallest in window [2,5,4] should be 4');
+  
+  // Test with k=1 (minimum in each window)
+  Result := FSlidingWindow.KthSmallestInSlidingWindow(3, 1);
+  CheckEquals(1, Result[0], '1st smallest in window [1,3,2] should be 1');
+  CheckEquals(2, Result[1], '1st smallest in window [3,2,5] should be 2');
+  CheckEquals(2, Result[2], '1st smallest in window [2,5,4] should be 2');
+  
+  // Test with k=3 (maximum in each window)
+  Result := FSlidingWindow.KthSmallestInSlidingWindow(3, 3);
+  CheckEquals(3, Result[0], '3rd smallest in window [1,3,2] should be 3');
+  CheckEquals(5, Result[1], '3rd smallest in window [3,2,5] should be 5');
+  CheckEquals(5, Result[2], '3rd smallest in window [2,5,4] should be 5');
+  
+  // Test edge cases
+  Result := FSlidingWindow.KthSmallestInSlidingWindow(0, 1); // Invalid window size
+  CheckEquals(0, Length(Result), 'Invalid window size should return empty array');
+  
+  Result := FSlidingWindow.KthSmallestInSlidingWindow(3, 0); // Invalid k
+  CheckEquals(0, Length(Result), 'Invalid k should return empty array');
+  
+  Result := FSlidingWindow.KthSmallestInSlidingWindow(15, 1); // Window size > data size
+  CheckEquals(0, Length(Result), 'Window size > data size should return empty array');
 end;
 
 // Test suite registration

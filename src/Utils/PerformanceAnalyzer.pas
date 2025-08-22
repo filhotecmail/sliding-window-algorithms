@@ -85,6 +85,9 @@ type
     // Benchmark methods for string algorithms
     procedure BenchmarkStringAlgorithms;
     
+    // Benchmark methods for k-th smallest algorithms
+    procedure BenchmarkKthSmallestAlgorithms;
+    
     // Comprehensive benchmark suite
     procedure RunFullBenchmarkSuite;
     procedure RunScalabilityTest(StartSize, EndSize, Step: Integer);
@@ -645,6 +648,9 @@ begin
   
   // Run string algorithm benchmarks
   BenchmarkStringAlgorithms;
+  
+  // Run k-th smallest element benchmarks
+  BenchmarkKthSmallestAlgorithms;
 end;
 
 procedure TSlidingWindowBenchmark.RunScalabilityTest(StartSize, EndSize, Step: Integer);
@@ -726,6 +732,76 @@ end;
 function TMemoryTracker.GetPeakMemoryUsageMB: Double;
 begin
   Result := GetPeakMemoryUsage / (1024 * 1024);
+end;
+
+procedure TSlidingWindowBenchmark.BenchmarkKthSmallestAlgorithms;
+var
+  SlidingWindow: TIntegerSlidingWindow;
+  WindowSizes: TArray<Integer>;
+  KValues: TArray<Integer>;
+  WindowSize, K: Integer;
+  Results: TArray<Integer>;
+  SingleResult: Integer;
+  Measurement: TPerformanceMeasurement;
+begin
+  SlidingWindow := TIntegerSlidingWindow.Create(FTestData);
+  try
+    WindowSizes := [3, 5, 10, 20, 50];
+    KValues := [1, 2, 3];
+    
+    WriteLn('Benchmarking P. Raykov k-th Smallest Element Algorithms...');
+    
+    for WindowSize in WindowSizes do
+    begin
+      if WindowSize > Length(FTestData) then
+        Continue;
+        
+      for K in KValues do
+      begin
+        if K > WindowSize then
+          Continue;
+          
+        // Benchmark KthSmallestInSlidingWindow
+        FAnalyzer.StartMeasurement;
+        Results := SlidingWindow.KthSmallestInSlidingWindow(WindowSize, K);
+        Measurement := FAnalyzer.EndMeasurement(
+          Format('KthSmallestInSlidingWindow(w=%d,k=%d)', [WindowSize, K]),
+          Length(FTestData),
+          WindowSize,
+          Length(Results),
+          'O(n*k*log(k))',
+          'O(k)'
+        );
+        
+        WriteLn(Format('  Window=%d, K=%d: %s', [
+          WindowSize, K, FAnalyzer.FormatMeasurement(Measurement)
+        ]));
+        
+        // Benchmark single position for comparison
+        if Length(FTestData) >= WindowSize then
+        begin
+          FAnalyzer.StartMeasurement;
+          SingleResult := SlidingWindow.KthSmallestAtPosition(0, WindowSize, K);
+          Measurement := FAnalyzer.EndMeasurement(
+            Format('KthSmallestAtPosition(w=%d,k=%d)', [WindowSize, K]),
+            WindowSize,
+            0,
+            SingleResult,
+            'O(k*log(k))',
+            'O(k)'
+          );
+          
+          WriteLn(Format('    Single position: %s', [
+            FAnalyzer.FormatMeasurement(Measurement)
+          ]));
+        end;
+      end;
+    end;
+    
+    WriteLn('k-th Smallest Element benchmarks completed.');
+  finally
+    SlidingWindow.Free;
+  end;
 end;
 
 end.

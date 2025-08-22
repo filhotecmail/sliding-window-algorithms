@@ -1,22 +1,23 @@
 program SlidingWindowDemo;
 
 {$APPTYPE CONSOLE}
-{$mode objfpc}{$H+}
 
 uses
   SysUtils, Classes, DateUtils,
   SlidingWindow, PerformanceAnalyzer;
 
 var
-  IntegerWindow: TSlidingWindowInteger;
-  StringWindow: TSlidingWindowString;
+  IntegerWindow: TIntegerSlidingWindow;
+  StringWindow: TStringSlidingWindow;
   Benchmark: TSlidingWindowBenchmark;
-  TestData: array of Integer;
+  TestData: TArray<Integer>;
   TestString: string;
   i: Integer;
   Result: Integer;
   SubStr: string;
   Report: string;
+  KthResults: TArray<Integer>;
+  Results: TArray<Integer>;
 
 begin
   WriteLn('========================================');
@@ -72,11 +73,39 @@ begin
     IntegerWindow := TSlidingWindowInteger.Create;
     try
       // Find smallest window with sum >= target
-      Result := IntegerWindow.SmallestWindowWithSum(TestData, 150);
-      if Result > 0 then
-        WriteLn('Smallest window with sum >= 150: ', Result, ' elements')
-      else
-        WriteLn('No window found with sum >= 150');
+  Result := IntegerWindow.SmallestSubarrayWithSumGreaterThan(150);
+  if Result > 0 then
+    WriteLn('Smallest window with sum >= 150: ', Result, ' elements')
+  else
+    WriteLn('No window found with sum >= 150');
+    
+  // P. Raykov Algorithm 1: k-th smallest element in sliding window
+  WriteLn;
+  WriteLn('=== P. Raykov k-th Smallest Element Algorithm ===');
+  
+  // Find 2nd smallest element in each window of size 5
+  KthResults := IntegerWindow.KthSmallestInSlidingWindow(5, 2);
+  Write('2nd smallest in each window (size 5): ');
+  for I := 0 to High(KthResults) do
+  begin
+    Write(KthResults[I]);
+    if I < High(KthResults) then Write(', ');
+  end;
+  WriteLn;
+  
+  // Find median (middle element) in each window of size 5
+  KthResults := IntegerWindow.KthSmallestInSlidingWindow(5, 3); // 3rd element is median for size 5
+  Write('Median in each window (size 5): ');
+  for I := 0 to High(KthResults) do
+  begin
+    Write(KthResults[I]);
+    if I < High(KthResults) then Write(', ');
+  end;
+  WriteLn;
+  
+  // Find specific k-th smallest at a specific position
+  Result := IntegerWindow.KthSmallestAtPosition(0, 7, 4); // 4th smallest in first 7 elements
+  WriteLn('4th smallest in first 7 elements: ', Result);
       
       // Find largest window with sum <= target
       Result := IntegerWindow.LargestWindowWithSum(TestData, 100);

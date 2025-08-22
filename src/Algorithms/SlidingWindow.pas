@@ -65,6 +65,10 @@ type
     function SlidingWindowMaximum(WindowSize: Integer): TArray<Integer>;
     function CountSubarraysWithSumK(K: Integer): Integer;
     
+    // P. Raykov Algorithm 1: k-th smallest element in sliding window
+    function KthSmallestInSlidingWindow(WindowSize: Integer; K: Integer): TArray<Integer>;
+    function KthSmallestAtPosition(StartPos, WindowSize: Integer; K: Integer): Integer;
+    
     property Data: TArray<Integer> read FData;
     property Size: Integer read FSize;
   end;
@@ -512,6 +516,99 @@ begin
   end;
   
   Result := Count;
+end;
+
+function TIntegerSlidingWindow.KthSmallestAtPosition(StartPos, WindowSize: Integer; K: Integer): Integer;
+var
+  WindowData: TArray<Integer>;
+  I: Integer;
+  
+  procedure QuickSelect(var Arr: TArray<Integer>; Left, Right, K: Integer);
+  var
+    PivotIndex, NewPivotIndex: Integer;
+    
+    function Partition(var A: TArray<Integer>; L, R, PivotIdx: Integer): Integer;
+    var
+      PivotValue, Temp: Integer;
+      StoreIndex, I: Integer;
+    begin
+      PivotValue := A[PivotIdx];
+      // Move pivot to end
+      Temp := A[PivotIdx];
+      A[PivotIdx] := A[R];
+      A[R] := Temp;
+      
+      StoreIndex := L;
+      for I := L to R - 1 do
+      begin
+        if A[I] < PivotValue then
+        begin
+          Temp := A[I];
+          A[I] := A[StoreIndex];
+          A[StoreIndex] := Temp;
+          Inc(StoreIndex);
+        end;
+      end;
+      
+      // Move pivot to its final place
+      Temp := A[StoreIndex];
+      A[StoreIndex] := A[R];
+      A[R] := Temp;
+      
+      Result := StoreIndex;
+    end;
+    
+  begin
+    if Left = Right then
+      Exit;
+      
+    PivotIndex := Left + Random(Right - Left + 1);
+    NewPivotIndex := Partition(Arr, Left, Right, PivotIndex);
+    
+    if K = NewPivotIndex then
+      Exit
+    else if K < NewPivotIndex then
+      QuickSelect(Arr, Left, NewPivotIndex - 1, K)
+    else
+      QuickSelect(Arr, NewPivotIndex + 1, Right, K);
+  end;
+  
+begin
+  // Validate parameters
+  if (StartPos < 0) or (StartPos + WindowSize > FSize) or (K < 1) or (K > WindowSize) then
+  begin
+    Result := 0;
+    Exit;
+  end;
+  
+  // Copy window data
+  SetLength(WindowData, WindowSize);
+  for I := 0 to WindowSize - 1 do
+    WindowData[I] := FData[StartPos + I];
+  
+  // Use QuickSelect to find k-th smallest (0-indexed, so K-1)
+  QuickSelect(WindowData, 0, WindowSize - 1, K - 1);
+  Result := WindowData[K - 1];
+end;
+
+function TIntegerSlidingWindow.KthSmallestInSlidingWindow(WindowSize: Integer; K: Integer): TArray<Integer>;
+var
+  I: Integer;
+  ResultCount: Integer;
+begin
+  // Validate parameters
+  if (WindowSize <= 0) or (WindowSize > FSize) or (K < 1) or (K > WindowSize) then
+  begin
+    SetLength(Result, 0);
+    Exit;
+  end;
+  
+  ResultCount := FSize - WindowSize + 1;
+  SetLength(Result, ResultCount);
+  
+  // Calculate k-th smallest for each window position
+  for I := 0 to ResultCount - 1 do
+    Result[I] := KthSmallestAtPosition(I, WindowSize, K);
 end;
 
 { TStringSlidingWindow }
